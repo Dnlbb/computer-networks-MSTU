@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Менеджер файлов</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1, h2 { color: #333; }
+        form { margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 5px; margin-bottom: 10px; }
+        button { background-color: #000000; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+        button:hover { background-color: #333333; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin-bottom: 5px; }
+    </style>
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8081';
+
+        async function createFile(event) {
+            event.preventDefault();
+            const fileName = document.getElementById('fileName').value;
+            const content = document.getElementById('content').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/create_file`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ fileName, content }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.text();
+                alert(result);
+                document.getElementById('createFileForm').reset();
+                await updateFileList();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ошибка при создании файла');
+            }
+        }
+        async function updateFileList() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/list_files`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                let files = await response.json();
+
+                // Используем Set для удаления дубликатов по имени файла
+                const uniqueFiles = new Map(); // Используем Map для уникальности и сохранения порядка
+
+                files.forEach(file => {
+                    uniqueFiles.set(file.Name, file); // Добавляем файл, если его ещё нет
+                });
+
+                // Превращаем обратно в массив для сортировки
+                files = Array.from(uniqueFiles.values());
+
+                // Сортируем файлы по дате изменения (новые вверху)
+                files.sort((a, b) => new Date(b.ModTime) - new Date(a.ModTime));
+
+                const fileList = document.getElementById('fileList');
+                fileList.innerHTML = '';
+
+                files.forEach(file => {
+                    const li = document.createElement('li');
+                    li.textContent = `Имя файла: ${file.Name}, Последнее изменение: ${new Date(file.ModTime).toLocaleString()}`;
+                    fileList.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ошибка при получении списка файлов');
+            }
+        }
+
+
+        async function simulateSync() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sync`, {
+                    method: 'POST',
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const result = await response.text();
+                alert(result);
+                await updateFileList();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ошибка при синхронизации');
+            }
+        }
+
+        // Инициализация
+        window.onload = function() {
+            document.getElementById('createFileForm').addEventListener('submit', createFile);
+            document.getElementById('syncButton').addEventListener('click', simulateSync);
+            updateFileList();
+            // Периодическое обновление списка файлов
+            setInterval(updateFileList, 5000);
+        }
+    </script>
+</head>
+<body>
+<h1>Менеджер файлов</h1>
+
+<h2>Создание файла</h2>
+<form id="createFileForm">
+    <label for="fileName">Имя файла:</label>
+    <input type="text" id="fileName" name="fileName" required>
+    <br><br>
+    <label for="content">Содержимое файла:</label>
+    <textarea id="content" name="content" required></textarea>
+    <br><br>
+    <button type="submit">Создать файл</button>
+</form>
+
+<h2>Список файлов</h2>
+<ul id="fileList">
+    <!-- Здесь будет отображен список файлов -->
+</ul>
+</body>
+</html>

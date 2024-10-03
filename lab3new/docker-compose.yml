@@ -1,0 +1,45 @@
+
+services:
+  peer1:
+    build: .
+    command: ["./peer", "-addr=peer1:8081", "-next=peer2:8082", "-dir=/data"]
+    volumes:
+      - ./dir1:/data
+    ports:
+      - "8081:8081"
+    networks:
+      - peernet
+
+  peer2:
+    build: .
+    command: ["./peer", "-addr=peer2:8082", "-next=peer3:8083", "-dir=/data"]
+    volumes:
+      - ./dir2:/data
+    ports:
+      - "8082:8082"
+    networks:
+      - peernet
+
+  peer3:
+    build: .
+    command: ["./peer", "-addr=peer3:8083", "-next=peer4:8084", "-dir=/data"]
+    volumes:
+      - ./dir3:/data
+    ports:
+      - "8083:8083"
+    networks:
+      - peernet
+
+  peer4:
+    build: .
+    command: ["./peer", "-addr=peer4:8084", "-next=peer1:8081", "-dir=/data"]
+    volumes:
+      - ./dir4:/data
+    ports:
+      - "8084:8084"
+    networks:
+      - peernet
+
+networks:
+  peernet:
+    driver: bridge
