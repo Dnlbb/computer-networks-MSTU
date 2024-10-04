@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+    }
+    #messages {
+      border: 1px solid #ddd;
+      height: 300px;
+      padding: 10px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+    #input-container {
+      display: flex;
+    }
+    #author, #message {
+      margin-right: 10px;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+    }
+    #send-btn {
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      background-color: #1b2295;
+      color: white;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+<h2>WebSocket Chat</h2>
+
+<div id="messages">
+  <!-- Здесь будут отображаться сообщения -->
+</div>
+
+<div id="input-container">
+  <input type="text" id="author" placeholder="Your name" />
+  <input type="text" id="message" placeholder="Your message" />
+  <button id="send-btn">Send</button>
+</div>
+
+<script>
+  const ws = new WebSocket("ws://localhost:8080/entry");
+
+  ws.onopen = function() {
+    console.log("Connected to WebSocket");
+  };
+
+  ws.onmessage = function(event) {
+    const msgData = JSON.parse(event.data);
+    const messageElem = document.createElement("div");
+    messageElem.textContent = msgData.author + " says: " + msgData.body;
+    document.getElementById("messages").appendChild(messageElem);
+  };
+
+  ws.onclose = function() {
+    console.log("Disconnected from WebSocket");
+  };
+
+  ws.onerror = function(error) {
+    console.log("WebSocket error: " + error);
+  };
+
+  document.getElementById("send-btn").addEventListener("click", function() {
+    const author = document.getElementById("author").value;
+    const body = document.getElementById("message").value;
+    const message = { author: author, body: body };
+    ws.send(JSON.stringify(message));
+
+    document.getElementById("message").value = "";
+  });
+</script>
+
+</body>
+</html>
+
